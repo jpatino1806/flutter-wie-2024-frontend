@@ -4,14 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dignal_2025/models/models.dart';
 
 class MyServer {
-  static String server = "192.168.1.152";
+  static String server = "192.168.100.16";
   static String portApi = "88";
   static final String _baseUrlApi = "$server:$portApi";
   
   Future<http.Response?> login({
     String username = '',
     String password = '',
-  }) async {
+  }) async { 
     final url = Uri.http(_baseUrlApi, '/api/login');
     try {
       return await http.post(

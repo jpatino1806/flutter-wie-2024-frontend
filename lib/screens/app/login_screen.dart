@@ -1,8 +1,12 @@
+import 'dart:convert' as convert;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dignal_2025/providers/login_form_provider.dart';
 import 'package:flutter_dignal_2025/screens/app/dashbord_screen.dart';
 import 'package:flutter_dignal_2025/screens/app/screens.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -49,9 +53,9 @@ class LoginForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loginProvider = Provider.of<LoginFormProvider>(context);
-    print('LoginForm');
-    print('username: ${loginProvider.username}');
-    print('password: ${loginProvider.password}');
+    //print('LoginForm');
+    // print('username: ${loginProvider.username}');
+    // print('password: ${loginProvider.password}');
     return Form(
       key: loginProvider.formKey,
       child: Column(
@@ -106,23 +110,9 @@ class LoginForm extends StatelessWidget {
                       FocusManager.instance.primaryFocus?.unfocus();
                       if (loginProvider.validate()) {
                         final response = await loginProvider.login();
-                        if (response) {
-                          // ignore: use_build_context_synchronously
-                          Navigator.of(context)
-                              .pushReplacementNamed(DashboardScreen.route);
-                        } else {
-                          // ignore: use_build_context_synchronously
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Hubo un error en la solicitud",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.red,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
+
+                        await validateResponse(response, context);
+                       
                       }
                     },
               child: Padding(
@@ -143,6 +133,38 @@ class LoginForm extends StatelessWidget {
             ),
           )
         ],
+      ),
+    );
+  }
+}
+
+
+
+Future<void> validateResponse (response, context) async {
+
+  //200 autorizado para ser logeado
+  //401 no autorizado
+
+  var decodeData = convert.jsonDecode(response.body) as Map<String, dynamic>;
+
+  if (response.statusCode == 200) {
+
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setInt('userId', decodeData['data']['user']['id']);
+    prefs.setString('user', decodeData['data']['user']['username']);
+    prefs.setString('token', decodeData['data']['token']);
+
+
+    Navigator.of(context).pushReplacementNamed(DashboardScreen.route);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          decodeData['message'],
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
